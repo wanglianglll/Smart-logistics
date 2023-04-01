@@ -1,0 +1,37 @@
+#include <ros/console.h>
+#include <ros/ros.h>
+#include <nav_msgs/Odometry.h>
+
+nav_msgs::Odometry odom_msg;
+
+void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+  //打印订阅信息
+  ROS_INFO("小车位置:（ %.2f, %.2f, %.2f）", 
+    msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
+  //将订阅到的消息赋值给发布的消息
+  odom_msg = *msg;
+}
+
+int main(int argc, char * argv[])
+{
+    setlocale(LC_ALL,"");
+    ros::init(argc, argv, "odom_publisher"); // 节点初始化
+    ros::NodeHandle nh; //创建节点句柄
+    // 订阅话题信息并说明callback函数
+    ros::Subscriber sub = nh.subscribe<nav_msgs::Odometry>("/odom", 10, odomCallback);
+    // 创建发布器，话题名称为“car1_pose”，发布队列长度为10
+    ros::Publisher pub = nh.advertise<nav_msgs::Odometry>("car1_pose", 10);
+    // 发布频率为10Hz
+    ros::Rate loop_rate(10); 
+    while (ros::ok())
+    {
+        // 发布与订阅相同的消息
+        odom_msg.header.stamp = ros::Time::now();
+        odom_msg.header.frame_id = "map";
+        pub.publish(odom_msg);
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+    return 0;
+}
